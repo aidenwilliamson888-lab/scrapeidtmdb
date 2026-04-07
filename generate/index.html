@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>TMDB Landing Page Generator</title>
+<style>
+body {
+    font-family: Arial;
+    background: #0b0b0b;
+    color: #fff;
+    text-align: center;
+    padding: 20px;
+}
+textarea, input, select {
+    width: 90%;
+    margin: 10px;
+    padding: 10px;
+    border-radius: 6px;
+}
+button {
+    padding: 10px 20px;
+    background: #ff2e63;
+    border: none;
+    color: #fff;
+    cursor: pointer;
+}
+.preview {
+    background: #111;
+    padding: 20px;
+    margin-top: 20px;
+}
+.cta {
+    display: inline-block;
+    padding: 15px 25px;
+    background: red;
+    color: #fff;
+    text-decoration: none;
+    margin-top: 20px;
+    font-weight: bold;
+}
+</style>
+</head>
+<body>
+
+<h2>🔥 TMDB CTA LANDING GENERATOR</h2>
+
+<input type="text" id="apiKey" placeholder="TMDB API Key">
+
+<textarea id="ids" placeholder="Masukkan ID (1 per baris)"></textarea>
+
+<input type="text" id="baseUrl" placeholder="Base URL (contoh: https://mopieapp.pages.dev/)">
+
+<input type="text" id="titleFormat" 
+value="WATCH {TITLE} {YEAR} FULLMOVIE Available Now Online Streamings">
+
+<select id="lang">
+<option value="en">EN</option>
+<option value="es">ES</option>
+<option value="es-mx">ES-MX</option>
+<option value="fr">FR</option>
+<option value="it">IT</option>
+<option value="th">TH</option>
+<option value="vi">VI</option>
+</select>
+
+<br>
+<button onclick="generate()">🚀 Generate</button>
+
+<textarea id="htmlOutput" placeholder="HTML output"></textarea>
+<textarea id="mdOutput" placeholder="Markdown output"></textarea>
+
+<script>
+
+function sleep(ms){ return new Promise(r=>setTimeout(r,ms)); }
+
+function getCTA(lang){
+    const cta = {
+        en: "▶ WATCH NOW",
+        es: "▶ VER AHORA",
+        "es-mx": "▶ VER AHORA",
+        fr: "▶ REGARDER",
+        it: "▶ GUARDA ORA",
+        th: "▶ ดูเลย",
+        vi: "▶ XEM NGAY"
+    };
+    return cta[lang] || "WATCH NOW";
+}
+
+async function generate(){
+    const apiKey = document.getElementById('apiKey').value;
+    const ids = document.getElementById('ids').value.split("\n");
+    const baseUrl = document.getElementById('baseUrl').value;
+    const format = document.getElementById('titleFormat').value;
+    const lang = document.getElementById('lang').value;
+
+    let htmlAll = "";
+    let mdAll = "";
+
+    for(let id of ids){
+        if(!id.trim()) continue;
+
+        let res = await fetch(`https://api.themoviedb.org/3/movie/${id}?api_key=${apiKey}`);
+        let data = await res.json();
+
+        let title = data.title;
+        let year = data.release_date ? data.release_date.split("-")[0] : "";
+        let overview = data.overview || "";
+
+        let finalTitle = format.replace("{TITLE}", title).replace("{YEAR}", year);
+
+        let ctaText = getCTA(lang);
+        let ctaLink = baseUrl.replace(/\/$/, "") + "/" + id;
+
+        let poster = data.poster_path 
+            ? "https://image.tmdb.org/t/p/w500" + data.poster_path 
+            : "";
+
+        let html = `
+<!DOCTYPE html>
+<html>
+<head>
+<title>${finalTitle}</title>
+<meta name="description" content="${overview.substring(0,150)}">
+
+<meta property="og:title" content="${finalTitle}">
+<meta property="og:image" content="${poster}">
+<meta property="og:type" content="website">
+
+</head>
+<body style="background:#000;color:#fff;text-align:center;font-family:sans-serif">
+
+<h1>${finalTitle}</h1>
+
+<img src="${poster}" style="max-width:300px;border-radius:10px">
+
+<p>${overview}</p>
+
+<a href="${ctaLink}" style="display:inline-block;padding:15px 30px;background:red;color:#fff;text-decoration:none;font-weight:bold;margin-top:20px">
+${ctaText}
+</a>
+
+</body>
+</html>
+`;
+
+        let md = `
+# ${finalTitle}
+
+![poster](${poster})
+
+${overview}
+
+[${ctaText}](${ctaLink})
+`;
+
+        htmlAll += html + "\n\n<!-- NEXT -->\n\n";
+        mdAll += md + "\n\n---\n\n";
+
+        await sleep(200);
+    }
+
+    document.getElementById('htmlOutput').value = htmlAll;
+    document.getElementById('mdOutput').value = mdAll;
+}
+
+</script>
+
+</body>
+</html>
