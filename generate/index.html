@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>TMDB Landing Page Generator</title>
+<title>TMDB FULL SEO AGC PRO</title>
 <style>
 body {
     font-family: Arial;
@@ -15,7 +15,6 @@ textarea, input, select {
     width: 90%;
     margin: 10px;
     padding: 10px;
-    border-radius: 6px;
 }
 button {
     padding: 10px 20px;
@@ -24,66 +23,83 @@ button {
     color: #fff;
     cursor: pointer;
 }
-.preview {
-    background: #111;
-    padding: 20px;
-    margin-top: 20px;
-}
-.cta {
-    display: inline-block;
-    padding: 15px 25px;
-    background: red;
-    color: #fff;
-    text-decoration: none;
-    margin-top: 20px;
-    font-weight: bold;
-}
 </style>
 </head>
 <body>
 
-<h2>🔥 TMDB CTA LANDING GENERATOR</h2>
+<h2>🔥 FULL SEO AGC + REGION FIX</h2>
 
 <input type="text" id="apiKey" placeholder="TMDB API Key">
+<textarea id="ids" placeholder="ID per baris"></textarea>
 
-<textarea id="ids" placeholder="Masukkan ID (1 per baris)"></textarea>
-
-<input type="text" id="baseUrl" placeholder="Base URL (contoh: https://mopieapp.pages.dev/)">
+<input type="text" id="baseUrl" placeholder="https://domain.com/">
 
 <input type="text" id="titleFormat" 
 value="WATCH {TITLE} {YEAR} FULLMOVIE Available Now Online Streamings">
 
 <select id="lang">
-<option value="en">EN</option>
-<option value="es">ES</option>
-<option value="es-mx">ES-MX</option>
-<option value="fr">FR</option>
-<option value="it">IT</option>
-<option value="th">TH</option>
-<option value="vi">VI</option>
+<option value="en-US">EN</option>
+<option value="es-ES">ES</option>
+<option value="es-MX">ES-MX</option>
+<option value="fr-FR">FR</option>
+<option value="it-IT">IT</option>
+<option value="th-TH">TH</option>
+<option value="vi-VN">VI</option>
 </select>
 
 <br>
 <button onclick="generate()">🚀 Generate</button>
 
-<textarea id="htmlOutput" placeholder="HTML output"></textarea>
-<textarea id="mdOutput" placeholder="Markdown output"></textarea>
+<textarea id="output"></textarea>
 
 <script>
 
 function sleep(ms){ return new Promise(r=>setTimeout(r,ms)); }
 
+function getRegion(lang){
+    return lang.split("-")[1];
+}
+
 function getCTA(lang){
-    const cta = {
-        en: "▶ WATCH NOW",
-        es: "▶ VER AHORA",
-        "es-mx": "▶ VER AHORA",
-        fr: "▶ REGARDER",
-        it: "▶ GUARDA ORA",
-        th: "▶ ดูเลย",
-        vi: "▶ XEM NGAY"
+    const map = {
+        "en-US":"WATCH NOW",
+        "es-ES":"VER AHORA",
+        "es-MX":"VER AHORA",
+        "fr-FR":"REGARDER",
+        "it-IT":"GUARDA ORA",
+        "th-TH":"ดูเลย",
+        "vi-VN":"XEM NGAY"
     };
-    return cta[lang] || "WATCH NOW";
+    return map[lang];
+}
+
+function longSEOContent(title, overview){
+return `
+<h1>${title}</h1>
+
+<p>${overview}</p>
+
+<h2>Watch ${title} Full Movie Online</h2>
+<p>If you are looking to watch ${title} online, you are in the right place. This movie has become one of the most searched titles online due to its popularity, engaging storyline, and high production quality.</p>
+
+<p>${title} offers an immersive cinematic experience that keeps viewers engaged from start to finish. With a compelling plot and well-developed characters, it stands out among other films released in recent years.</p>
+
+<h2>Why ${title} Is Trending Right Now</h2>
+<p>The popularity of ${title} continues to rise globally. Many users are searching for ways to stream the movie online in high definition. This is due to its strong reviews, growing fanbase, and wide international appeal.</p>
+
+<p>Streaming ${title} online allows viewers to enjoy the film anytime and anywhere without limitations. This flexibility is one of the main reasons why online streaming has become the preferred method of watching movies today.</p>
+
+<h2>Streaming ${title} in HD Quality</h2>
+<p>Watching ${title} in HD ensures the best viewing experience. High-definition streaming provides clear visuals, crisp audio, and a more immersive experience overall.</p>
+
+<p>Whether you are watching on mobile, desktop, or smart TV, ${title} delivers consistent quality across all devices.</p>
+
+<h2>About the Movie</h2>
+<p>${overview}</p>
+
+<h2>Where to Watch ${title} Online</h2>
+<p>${title} is now available for online streaming. Click the button below to start watching instantly. No delays, no hassle, just seamless entertainment.</p>
+`;
 }
 
 async function generate(){
@@ -92,14 +108,16 @@ async function generate(){
     const baseUrl = document.getElementById('baseUrl').value;
     const format = document.getElementById('titleFormat').value;
     const lang = document.getElementById('lang').value;
+    const region = getRegion(lang);
 
-    let htmlAll = "";
-    let mdAll = "";
+    let out = "";
 
     for(let id of ids){
         if(!id.trim()) continue;
 
-        let res = await fetch(`https://api.themoviedb.org/3/movie/${id}?api_key=${apiKey}`);
+        let url = `https://api.themoviedb.org/3/movie/${id}?api_key=${apiKey}&language=${lang}&region=${region}`;
+
+        let res = await fetch(url);
         let data = await res.json();
 
         let title = data.title;
@@ -108,59 +126,49 @@ async function generate(){
 
         let finalTitle = format.replace("{TITLE}", title).replace("{YEAR}", year);
 
-        let ctaText = getCTA(lang);
-        let ctaLink = baseUrl.replace(/\/$/, "") + "/" + id;
+        let cta = getCTA(lang);
+        let link = baseUrl.replace(/\/$/,"") + "/" + id;
 
         let poster = data.poster_path 
             ? "https://image.tmdb.org/t/p/w500" + data.poster_path 
             : "";
 
-        let html = `
+        out += `
 <!DOCTYPE html>
 <html>
 <head>
 <title>${finalTitle}</title>
-<meta name="description" content="${overview.substring(0,150)}">
+
+<meta name="description" content="${overview.substring(0,155)}">
+<meta name="keywords" content="${title}, watch ${title}, full movie, streaming online">
 
 <meta property="og:title" content="${finalTitle}">
 <meta property="og:image" content="${poster}">
 <meta property="og:type" content="website">
 
 </head>
-<body style="background:#000;color:#fff;text-align:center;font-family:sans-serif">
 
-<h1>${finalTitle}</h1>
+<body style="background:#000;color:#fff;text-align:center;font-family:sans-serif">
 
 <img src="${poster}" style="max-width:300px;border-radius:10px">
 
-<p>${overview}</p>
+${longSEOContent(finalTitle, overview)}
 
-<a href="${ctaLink}" style="display:inline-block;padding:15px 30px;background:red;color:#fff;text-decoration:none;font-weight:bold;margin-top:20px">
-${ctaText}
+<a href="${link}" style="display:inline-block;padding:15px 30px;background:red;color:#fff;margin-top:20px;text-decoration:none;font-weight:bold">
+${cta}
 </a>
 
 </body>
 </html>
+
+<!-- NEXT -->
+
 `;
 
-        let md = `
-# ${finalTitle}
-
-![poster](${poster})
-
-${overview}
-
-[${ctaText}](${ctaLink})
-`;
-
-        htmlAll += html + "\n\n<!-- NEXT -->\n\n";
-        mdAll += md + "\n\n---\n\n";
-
-        await sleep(200);
+        await sleep(300);
     }
 
-    document.getElementById('htmlOutput').value = htmlAll;
-    document.getElementById('mdOutput').value = mdAll;
+    document.getElementById('output').value = out;
 }
 
 </script>
