@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>TMDB Bulk ID Scraper</title>
+<style>
+body {
+    font-family: Arial;
+    background: #111;
+    color: #fff;
+    text-align: center;
+    padding: 20px;
+}
+input, select, button {
+    padding: 10px;
+    margin: 10px;
+    border-radius: 5px;
+    border: none;
+}
+button {
+    background: #18aae8;
+    color: #fff;
+    cursor: pointer;
+}
+textarea {
+    width: 90%;
+    height: 300px;
+    margin-top: 20px;
+}
+</style>
+</head>
+<body>
+
+<h2>🔥 TMDB BULK ID SCRAPER</h2>
+
+<input type="text" id="apiKey" placeholder="Masukkan API Key" size="40"><br>
+
+<select id="type">
+    <option value="popular">Popular</option>
+    <option value="now_playing">Now Playing</option>
+    <option value="upcoming">Upcoming</option>
+</select>
+
+<select id="target">
+    <option value="500">500 ID</option>
+    <option value="1000">1000 ID</option>
+    <option value="5000">5000 ID</option>
+    <option value="10000">10000 ID</option>
+</select>
+
+<br>
+<button onclick="scrape()">🚀 Start Scrape</button>
+<button onclick="downloadTXT()">⬇️ Download TXT</button>
+
+<textarea id="output"></textarea>
+
+<script>
+let results = [];
+
+function sleep(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+async function scrape() {
+    const apiKey = document.getElementById('apiKey').value;
+    const type = document.getElementById('type').value;
+    const target = parseInt(document.getElementById('target').value);
+
+    if (!apiKey) {
+        alert("Masukkan API Key!");
+        return;
+    }
+
+    results = [];
+    let page = 1;
+
+    document.getElementById('output').value = "Scraping...\n";
+
+    while (results.length < target && page <= 500) {
+        try {
+            let url = `https://api.themoviedb.org/3/movie/${type}?api_key=${apiKey}&page=${page}`;
+
+            let res = await fetch(url);
+            let data = await res.json();
+
+            data.results.forEach(movie => {
+                if (movie.id && results.length < target) {
+                    results.push(movie.id);
+                }
+            });
+
+            document.getElementById('output').value += `Page ${page} ✔ (${results.length}/${target})\n`;
+
+            page++;
+
+            // delay biar aman rate limit
+            await sleep(250);
+
+        } catch (err) {
+            console.log(err);
+            break;
+        }
+    }
+
+    // remove duplicate
+    results = [...new Set(results)];
+
+    document.getElementById('output').value = results.join("\n");
+}
+
+function downloadTXT() {
+    const blob = new Blob([results.join("\n")], {type : 'text/plain'});
+    const url = URL.createObjectURL(blob);
+
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'tmdb_ids.txt';
+    a.click();
+}
+</script>
+
+</body>
+</html>
