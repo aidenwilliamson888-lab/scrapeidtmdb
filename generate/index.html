@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>TMDB FULL SEO AGC PRO</title>
+<title>TMDB FULL SEO + MD GENERATOR</title>
 <style>
 body {
     font-family: Arial;
@@ -27,7 +27,7 @@ button {
 </head>
 <body>
 
-<h2>🔥 FULL SEO AGC + REGION FIX</h2>
+<h2>🔥 AGC SEO + HTML + MD</h2>
 
 <input type="text" id="apiKey" placeholder="TMDB API Key">
 <textarea id="ids" placeholder="ID per baris"></textarea>
@@ -50,7 +50,14 @@ value="WATCH {TITLE} {YEAR} FULLMOVIE Available Now Online Streamings">
 <br>
 <button onclick="generate()">🚀 Generate</button>
 
-<textarea id="output"></textarea>
+<h3>HTML Output</h3>
+<textarea id="htmlOutput"></textarea>
+
+<h3>Markdown Output (.md)</h3>
+<textarea id="mdOutput"></textarea>
+
+<br>
+<button onclick="downloadMD()">⬇️ Download .md</button>
 
 <script>
 
@@ -73,32 +80,42 @@ function getCTA(lang){
     return map[lang];
 }
 
-function longSEOContent(title, overview){
+function longHTML(title, overview){
 return `
 <h1>${title}</h1>
 
 <p>${overview}</p>
 
 <h2>Watch ${title} Full Movie Online</h2>
-<p>If you are looking to watch ${title} online, you are in the right place. This movie has become one of the most searched titles online due to its popularity, engaging storyline, and high production quality.</p>
+<p>If you are looking to watch ${title} online, this is the best place to start.</p>
 
-<p>${title} offers an immersive cinematic experience that keeps viewers engaged from start to finish. With a compelling plot and well-developed characters, it stands out among other films released in recent years.</p>
-
-<h2>Why ${title} Is Trending Right Now</h2>
-<p>The popularity of ${title} continues to rise globally. Many users are searching for ways to stream the movie online in high definition. This is due to its strong reviews, growing fanbase, and wide international appeal.</p>
-
-<p>Streaming ${title} online allows viewers to enjoy the film anytime and anywhere without limitations. This flexibility is one of the main reasons why online streaming has become the preferred method of watching movies today.</p>
-
-<h2>Streaming ${title} in HD Quality</h2>
-<p>Watching ${title} in HD ensures the best viewing experience. High-definition streaming provides clear visuals, crisp audio, and a more immersive experience overall.</p>
-
-<p>Whether you are watching on mobile, desktop, or smart TV, ${title} delivers consistent quality across all devices.</p>
+<h2>Why ${title} Is Popular</h2>
+<p>${title} is trending worldwide due to its story, visuals, and audience engagement.</p>
 
 <h2>About the Movie</h2>
 <p>${overview}</p>
 
-<h2>Where to Watch ${title} Online</h2>
-<p>${title} is now available for online streaming. Click the button below to start watching instantly. No delays, no hassle, just seamless entertainment.</p>
+<h2>Streaming Info</h2>
+<p>You can watch ${title} online in HD quality anytime.</p>
+`;
+}
+
+function longMD(title, overview, link, cta){
+return `
+# ${title}
+
+${overview}
+
+## Watch ${title} Online
+${overview}
+
+## Why This Movie is Trending
+${title} is one of the most searched movies online.
+
+## Streaming Info
+Watch now in HD quality.
+
+[${cta}](${link})
 `;
 }
 
@@ -110,7 +127,8 @@ async function generate(){
     const lang = document.getElementById('lang').value;
     const region = getRegion(lang);
 
-    let out = "";
+    let htmlAll = "";
+    let mdAll = "";
 
     for(let id of ids){
         if(!id.trim()) continue;
@@ -126,49 +144,55 @@ async function generate(){
 
         let finalTitle = format.replace("{TITLE}", title).replace("{YEAR}", year);
 
-        let cta = getCTA(lang);
         let link = baseUrl.replace(/\/$/,"") + "/" + id;
+        let cta = getCTA(lang);
 
         let poster = data.poster_path 
             ? "https://image.tmdb.org/t/p/w500" + data.poster_path 
             : "";
 
-        out += `
+        // HTML
+        let html = `
 <!DOCTYPE html>
 <html>
 <head>
 <title>${finalTitle}</title>
-
-<meta name="description" content="${overview.substring(0,155)}">
-<meta name="keywords" content="${title}, watch ${title}, full movie, streaming online">
-
-<meta property="og:title" content="${finalTitle}">
+<meta name="description" content="${overview.substring(0,150)}">
 <meta property="og:image" content="${poster}">
-<meta property="og:type" content="website">
-
 </head>
+<body style="background:#000;color:#fff;text-align:center">
 
-<body style="background:#000;color:#fff;text-align:center;font-family:sans-serif">
+<img src="${poster}" style="max-width:300px">
 
-<img src="${poster}" style="max-width:300px;border-radius:10px">
+${longHTML(finalTitle, overview)}
 
-${longSEOContent(finalTitle, overview)}
-
-<a href="${link}" style="display:inline-block;padding:15px 30px;background:red;color:#fff;margin-top:20px;text-decoration:none;font-weight:bold">
+<a href="${link}" style="display:inline-block;padding:15px;background:red;color:#fff;margin-top:20px">
 ${cta}
 </a>
 
 </body>
 </html>
-
-<!-- NEXT -->
-
 `;
+
+        // MD
+        let md = longMD(finalTitle, overview, link, cta);
+
+        htmlAll += html + "\n\n<!-- NEXT -->\n\n";
+        mdAll += md + "\n\n---\n\n";
 
         await sleep(300);
     }
 
-    document.getElementById('output').value = out;
+    document.getElementById('htmlOutput').value = htmlAll;
+    document.getElementById('mdOutput').value = mdAll;
+}
+
+function downloadMD(){
+    const blob = new Blob([document.getElementById('mdOutput').value], {type:'text/markdown'});
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = "movies.md";
+    a.click();
 }
 
 </script>
