@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>TMDB Bulk ID Scraper</title>
+<title>TMDB Region ID Scraper</title>
 <style>
 body {
     font-family: Arial;
@@ -31,14 +31,38 @@ textarea {
 </head>
 <body>
 
-<h2>🔥 TMDB BULK ID SCRAPER</h2>
+<h2>🔥 TMDB ID SCRAPER (REGION VERSION)</h2>
 
-<input type="text" id="apiKey" placeholder="Masukkan API Key" size="40"><br>
+<input type="text" id="apiKey" placeholder="TMDB API Key" size="40"><br>
 
 <select id="type">
     <option value="popular">Popular</option>
     <option value="now_playing">Now Playing</option>
     <option value="upcoming">Upcoming</option>
+</select>
+
+<select id="region">
+    <option value="US">United States</option>
+    <option value="ES">Spain</option>
+    <option value="MX">Mexico</option>
+    <option value="FR">France</option>
+    <option value="IT">Italy</option>
+    <option value="TH">Thailand</option>
+    <option value="VN">Vietnam</option>
+    <option value="BG">Bulgaria</option>
+    <option value="KR">South Korea</option>
+</select>
+
+<select id="language">
+    <option value="en-US">English</option>
+    <option value="es-ES">Spanish</option>
+    <option value="es-MX">Spanish (MX)</option>
+    <option value="fr-FR">French</option>
+    <option value="it-IT">Italian</option>
+    <option value="th-TH">Thai</option>
+    <option value="vi-VN">Vietnamese</option>
+    <option value="bg-BG">Bulgarian</option>
+    <option value="ko-KR">Korean</option>
 </select>
 
 <select id="target">
@@ -57,13 +81,15 @@ textarea {
 <script>
 let results = [];
 
-function sleep(ms) {
+function sleep(ms){
     return new Promise(resolve => setTimeout(resolve, ms));
 }
 
 async function scrape() {
     const apiKey = document.getElementById('apiKey').value;
     const type = document.getElementById('type').value;
+    const region = document.getElementById('region').value;
+    const language = document.getElementById('language').value;
     const target = parseInt(document.getElementById('target').value);
 
     if (!apiKey) {
@@ -78,10 +104,12 @@ async function scrape() {
 
     while (results.length < target && page <= 500) {
         try {
-            let url = `https://api.themoviedb.org/3/movie/${type}?api_key=${apiKey}&page=${page}`;
+            let url = `https://api.themoviedb.org/3/movie/${type}?api_key=${apiKey}&page=${page}&region=${region}&language=${language}`;
 
             let res = await fetch(url);
             let data = await res.json();
+
+            if (!data.results) break;
 
             data.results.forEach(movie => {
                 if (movie.id && results.length < target) {
@@ -93,7 +121,6 @@ async function scrape() {
 
             page++;
 
-            // delay biar aman rate limit
             await sleep(250);
 
         } catch (err) {
@@ -102,7 +129,6 @@ async function scrape() {
         }
     }
 
-    // remove duplicate
     results = [...new Set(results)];
 
     document.getElementById('output').value = results.join("\n");
@@ -114,7 +140,7 @@ function downloadTXT() {
 
     const a = document.createElement('a');
     a.href = url;
-    a.download = 'tmdb_ids.txt';
+    a.download = 'tmdb_ids_region.txt';
     a.click();
 }
 </script>
