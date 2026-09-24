@@ -163,12 +163,29 @@ function getLang(region){
     return languageMap[region] || "en-US";
 }
 
+async function isNetflixProduction(apiKey, movieId){
+    try {
+        const detailUrl = `https://api.themoviedb.org/3/movie/${movieId}?api_key=${encodeURIComponent(apiKey)}&language=en-US`;
+        const response = await fetch(detailUrl);
+        if(!response.ok) return false;
+
+        const movie = await response.json();
+        const companies = Array.isArray(movie.production_companies) ? movie.production_companies : [];
+
+        return companies.some(company => {
+            const companyId = String(company.id || "");
+            const companyName = String(company.name || "").toLowerCase();
+            return companyId === "213" || companyName.includes("netflix");
+        });
+    } catch(error) {
+        console.warn("Netflix verification failed for movie", movieId, error);
+        return false;
+    }
+}
+
 async function fetchRegion(apiKey, type, region, target, mode){
     let page = 1;
 
-    // Use TMDB Discover so the selected country filters the movie's
-    // original production country instead of only filtering release region.
-    // IN = India, KR = South Korea, JP = Japan, etc.
     const sortBy = type === "upcoming"
         ? "primary_release_date.asc"
         : type === "now_playing"
@@ -189,13 +206,21 @@ async function fetchRegion(apiKey, type, region, target, mode){
         let res = await fetch(url);
         let data = await res.json();
 
-        if(!data.results) break;
+        if(!data.results || !data.results.length) break;
 
-        data.results.forEach(m=>{
-            if(m.id && results.length < target){
-                results.push(m.id);
+        for(const movie of data.results){
+            if(results.length >= target) break;
+            if(!movie.id) continue;
+
+            // Second safety layer: verify the movie's production companies directly.
+            const netflixProduction = await isNetflixProduction(apiKey, movie.id);
+            if(netflixProduction) {
+                document.getElementById("output").value += `[${region}] Skipped Netflix production: ${movie.id}\n`;
+                continue;
             }
-        });
+
+            results.push(movie.id);
+        }
 
         document.getElementById("output").value += `[${region}] Page ${page}\n`;
 
