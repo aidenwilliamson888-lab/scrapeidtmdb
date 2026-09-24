@@ -38,6 +38,12 @@ textarea {
 
 <input type="text" id="apiKey" placeholder="TMDB API Key"><br>
 
+<label for="mode" style="display:inline-block;margin-top:10px;">Movie Mode:</label>
+<select id="mode">
+<option value="region_popular">TMDB Popular by Region (All Origins)</option>
+<option value="origin_country">Full Movies by Origin Country</option>
+</select><br>
+
 <select id="type">
 <option value="popular">Popular</option>
 <option value="now_playing">Now Playing</option>
@@ -157,7 +163,7 @@ function getLang(region){
     return languageMap[region] || "en-US";
 }
 
-async function fetchRegion(apiKey, type, region, target){
+async function fetchRegion(apiKey, type, region, target, mode){
     let page = 1;
 
     // Use TMDB Discover so the selected country filters the movie's
@@ -170,7 +176,15 @@ async function fetchRegion(apiKey, type, region, target){
             : "popularity.desc";
 
     while(results.length < target && page <= 500){
-        let url = `https://api.themoviedb.org/3/discover/movie?api_key=${encodeURIComponent(apiKey)}&with_origin_country=${encodeURIComponent(region)}&sort_by=${sortBy}&page=${page}&language=${getLang(region)}&include_adult=false`;
+        let url = `https://api.themoviedb.org/3/discover/movie?api_key=${encodeURIComponent(apiKey)}&sort_by=${sortBy}&page=${page}&language=${getLang(region)}&include_adult=false&without_companies=213`;
+
+        // Mode 1: TMDB popular/release-region results from all origin countries.
+        // Mode 2: only movies whose original production country matches the selected country.
+        if(mode === "origin_country") {
+            url += `&with_origin_country=${encodeURIComponent(region)}`;
+        } else {
+            url += `&region=${encodeURIComponent(region)}`;
+        }
 
         let res = await fetch(url);
         let data = await res.json();
@@ -193,6 +207,7 @@ async function fetchRegion(apiKey, type, region, target){
 async function scrape(){
     const apiKey = document.getElementById("apiKey").value;
     const type = document.getElementById("type").value;
+    const mode = document.getElementById("mode").value;
     const region = document.getElementById("region").value;
     const all = document.getElementById("allRegions").checked;
     const target = parseInt(document.getElementById("target").value);
@@ -203,14 +218,14 @@ async function scrape(){
     }
 
     results = [];
-    document.getElementById("output").value = "Start...\n";
+    document.getElementById("output").value = `Start...\nMode: ${mode === "origin_country" ? "Full Movies by Origin Country" : "TMDB Popular by Region"}\n`;
 
     if(all){
         for(let r of regions){
-            await fetchRegion(apiKey, type, r, target);
+            await fetchRegion(apiKey, type, r, target, mode);
         }
     } else {
-        await fetchRegion(apiKey, type, region, target);
+        await fetchRegion(apiKey, type, region, target, mode);
     }
 
     results = [...new Set(results)];
